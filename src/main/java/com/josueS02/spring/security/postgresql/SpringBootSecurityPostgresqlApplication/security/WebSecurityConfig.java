@@ -62,41 +62,43 @@ public class WebSecurityConfig { // extends WebSecurityConfigurerAdapter {
     }
 
     @Bean
-public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-    http
-      // 1) Arranca el filtro CORS…
-      .cors().and()
-      // 2) …luego deshabilita CSRF
-      .csrf(csrf -> csrf.disable())
-      .exceptionHandling(ex -> ex.authenticationEntryPoint(unauthorizedHandler))
-      .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-      .authorizeHttpRequests(auth -> auth
-          // los  endpoints públicos…
-          .requestMatchers("/api/auth/**").permitAll()
-          .requestMatchers("/api/test/**").permitAll()
-          .requestMatchers("/api/tweets/**").permitAll()
-          .requestMatchers("/api/reactions/**").permitAll()
-          // que cualquiera vea los comentarios
-          .requestMatchers(HttpMethod.GET, "/api/comments/tweet/**").permitAll()
-          // crear/borrar comentarios sólo si estás logueado
-          .requestMatchers("/api/comments/**").authenticated()
-          // el resto, autenticación obligatoria
-          .anyRequest().authenticated()
-      )
-      // el resto de tu config…
-      .authenticationProvider(authenticationProvider())
-      .addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class)
-    ;
-    return http.build();
-}
-
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+                // 1) Arranca el filtro CORS…
+                .cors().and()
+                // 2) …luego deshabilita CSRF
+                .csrf(csrf -> csrf.disable())
+                .exceptionHandling(ex -> ex.authenticationEntryPoint(unauthorizedHandler))
+                .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                // los  endpoints públicos…
+                .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/test/**").permitAll()
+                .requestMatchers("/api/tweets/**").permitAll()
+                .requestMatchers("/api/reactions/**").permitAll()
+                // que cualquiera vea los comentarios
+                .requestMatchers(HttpMethod.GET, "/api/comments/tweet/**").permitAll()
+                // crear/borrar comentarios sólo si estás logueado
+                .requestMatchers("/api/comments/**").authenticated()
+                // el resto, autenticación obligatoria
+                .anyRequest().authenticated()
+                )
+                // el resto de tu config…
+                .authenticationProvider(authenticationProvider())
+                .addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
+        return http.build();
+    }
 
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOriginPatterns(List.of("*"));
+        config.setAllowedOrigins(List.of(
+                "http://localhost:4200",
+                "https://tweeter-4tsn.onrender.com"
+        ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
+        config.setAllowCredentials(true); // <-- esto permite enviar cookies/tokens
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;
